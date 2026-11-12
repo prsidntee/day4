@@ -38,7 +38,7 @@
     return el;
   }
 
-  function addSourceChip(source) {
+  function addSourceChip(source, reason) {
     if (!source) return;
     const wrap = document.createElement("div");
     wrap.className = "tools";
@@ -46,6 +46,12 @@
     chip.className = "tool-chip";
     chip.textContent = source === "kakao" ? "⚡ 카카오 우선 추천" : "🤖 Gemini 에이전트";
     wrap.append(chip);
+    if (source !== "kakao" && reason) { // 카카오로 처리하지 못한 이유
+      const why = document.createElement("span");
+      why.className = "tool-chip fail";
+      why.textContent = `카카오 미사용: ${reason}`;
+      wrap.append(why);
+    }
     logEl.append(wrap);
   }
 
@@ -124,7 +130,7 @@
         throw new Error(data?.error || (res.status === 404 ? "/api/chat 을 찾을 수 없습니다. start.bat(로컬) 또는 Vercel 배포 주소에서 열어 주세요." : `서버 오류 (HTTP ${res.status})`));
       }
       pending.remove();
-      addSourceChip(data.source);
+      addSourceChip(data.source, data.fallbackReason);
       addToolChips(data.toolCalls);
       addMsg("bot", renderMarkdown(data.reply), true);
       history.push({ role: "assistant", content: data.reply });

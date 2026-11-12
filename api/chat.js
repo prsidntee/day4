@@ -1,7 +1,7 @@
 // Vercel Serverless Function: POST /api/chat
 // 요청: { messages: [{ role: "user" | "assistant", content: string }, ...] }
 // 응답: { reply, toolCalls, spots }
-import { runAgent } from "../lib/agent.js";
+import { runAgent, normalizeThinkingLevel } from "../lib/agent.js";
 import { tryKakaoFirst } from "../lib/kakao-first.js";
 
 const MAX_MESSAGES = 20;
@@ -51,7 +51,8 @@ export default async function handler(req, res) {
       console.warn("kakao-first 실패, Gemini 로 대체:", err.message);
       return null;
     });
-    if (kakao) return res.status(200).json(kakao);
+    if (kakao?.reply) return res.status(200).json(kakao);
+    const fallbackReason = kakao?.fallbackReason || null;
 
     // 2순위: Gemini 함수 호출 에이전트 (카카오 키 없음·오류·결과 없음·질문 해석 불가일 때만)
     // 복붙하면서 섞이기 쉬운 앞뒤 공백·줄바꿈·따옴표를 제거
@@ -62,11 +63,12 @@ export default async function handler(req, res) {
     const out = await runAgent({
       messages: body.messages,
       apiKey,
-      model: process.env.GEMINI_MODEL || "gemini-3.8-flash",
+      model: process.env.GEMINI_MODEL || "gemini-3.1-flash-lite",
+      thinkingLevel: normalizeThinkingLevel(process.env.GEMINI_THINKING_LEVEL),
       // 혼잡할 때 대신 쓸 모델 (쉼표로 여러 개 가능). 기본: 항상 최신 flash 를 가리키는 별칭
       fallbackModels: (process.env.GEMINI_FALLBACK_MODELS || "gemini-flash-latest").split(",").map((m) => m.trim()).filter(Boolean),
     });
-    return res.status(200).json({ ...out, source: "gemini" });
+    return res.status(200).json({ ...out, source: "gemini", fallbackReason });
   } catch (err) {
     console.error("agent error:", err);
     const status = err.status === 429 ? 429 : err.status === 504 ? 504 : 502;

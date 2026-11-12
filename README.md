@@ -41,7 +41,7 @@ vercel.json      outputDirectory=frontend, 함수 maxDuration=60초
 ## Vercel 배포
 
 1. 이 저장소를 Vercel에 Import (Framework Preset: **Other**, Root Directory: 저장소 루트, Build Command 비움).
-2. **Settings → Environment Variables** 에 `GEMINI_API_KEY` 등록 (선택: `GEMINI_MODEL`, 기본 `gemini-3.8-flash`).
+2. **Settings → Environment Variables** 에 `GEMINI_API_KEY` 등록 (선택: `GEMINI_MODEL` 기본 `gemini-3.1-flash-lite`, `GEMINI_THINKING_LEVEL` = minimal·low·medium·high, 비우면 모델 기본값).
 3. Deploy. 이후 `main` 에 push 하면 자동 배포됩니다.
 
 CLI 를 쓰려면: `npm i -g vercel` → `vercel` → `vercel env add GEMINI_API_KEY` → `vercel --prod`
