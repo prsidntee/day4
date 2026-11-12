@@ -22,6 +22,7 @@ if (existsSync(envFile)) {
 }
 
 const { default: chatHandler } = await import(pathToFileURL(join(root, "api", "chat.js")).href);
+const { default: configHandler } = await import(pathToFileURL(join(root, "api", "config.js")).href);
 
 const MIME = {
   ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8",
@@ -47,6 +48,10 @@ function adapt(req, res) {
 createServer(async (req, res) => {
   try {
     const url = new URL(req.url, "http://localhost");
+    if (url.pathname === "/api/config") {
+      await adapt(req, res);
+      return configHandler(req, res);
+    }
     if (url.pathname === "/api/chat") {
       await adapt(req, res);
       return await chatHandler(req, res);

@@ -37,7 +37,8 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "POST만 지원합니다" });
   }
 
-  const apiKey = process.env.GEMINI_API_KEY;
+  // 복붙하면서 섞이기 쉬운 앞뒤 공백·줄바꿈·따옴표를 제거
+  const apiKey = (process.env.GEMINI_API_KEY || "").trim().replace(/^["']+|["']+$/g, "").trim();
   if (!apiKey) {
     return res.status(500).json({ error: "서버에 GEMINI_API_KEY 환경 변수가 설정되지 않았습니다 (Vercel 프로젝트 설정 > Environment Variables)" });
   }
@@ -53,7 +54,7 @@ export default async function handler(req, res) {
     const out = await runAgent({
       messages: body.messages,
       apiKey,
-      model: process.env.GEMINI_MODEL || "gemini-2.5-flash",
+      model: process.env.GEMINI_MODEL || "gemini-3.8-flash",
     });
     return res.status(200).json(out);
   } catch (err) {

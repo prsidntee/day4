@@ -273,33 +273,15 @@ async function loadWeather() {
 // file:// 로 열면 Referer가 없어 OpenStreetMap 타일 서버가 403으로 거부함
 if (location.protocol === "file:") $("file-warning").hidden = false;
 
-// ---------- 지도 (OpenStreetMap + Leaflet) ----------
-// 한국(제주·울릉도·독도 포함)만 보이도록 범위 제한
-const KOREA_BOUNDS = L.latLngBounds([32.8, 124.4], [38.9, 132.0]);
-const map = L.map("map", {
-  zoomControl: true,
-  maxBounds: KOREA_BOUNDS,
-  maxBoundsViscosity: 1.0,
-  minZoom: 6,
-}).fitBounds(KOREA_BOUNDS);
-L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-  maxZoom: 18,
-  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-}).addTo(map);
-
-let selMarker = null;
+// ---------- 지도 (어댑터: Leaflet/OpenStreetMap 또는 카카오맵, boot.js 에서 선택) ----------
 function focusMap(city) {
-  selMarker?.remove();
-  selMarker = L.circleMarker([city.lat, city.lon], {
-    radius: 20, color: "#1d4ed8", weight: 3, fill: false, interactive: false,
-  }).addTo(map);
-  map.flyTo([city.lat, city.lon], Math.max(map.getZoom(), city.level === "dong" ? 11 : 9), { duration: 0.6 });
+  mapx.setSelected(city.lat, city.lon);
+  mapx.focus(city.lat, city.lon, city.level === "dong" ? "dong" : city.level === "point" ? "point" : "city");
 }
 
 // 지도 클릭 → 그 위치의 날씨·미세먼지
-map.on("click", (e) => {
-  if (!KOREA_BOUNDS.contains(e.latlng)) return;
-  const lat = +e.latlng.lat.toFixed(4), lon = +e.latlng.lng.toFixed(4);
+mapx.onClick((rawLat, rawLon) => {
+  const lat = +rawLat.toFixed(4), lon = +rawLon.toFixed(4);
   selected = { name: "선택한 위치", region: `${lat}, ${lon}`, lat, lon, level: "point" };
   searchEl.value = "";
   focusMap(selected);
@@ -317,8 +299,8 @@ const AIR_URL = "https://air-quality-api.open-meteo.com/v1/air-quality";
 
 let metric = "pm10";
 const dust = new Map(); // city -> { pm10, pm25 }
-const dustMarkers = new Map();
-const dustLayer = L.layerGroup().addTo(map);
+const dustBadges = new Map(); // city -> 지도 배지
+CITIES.forEach((c) => dustBadges.set(c, mapx.createBadge({ lat: c.lat, lon: c.lon, onClick: () => choose(c) })));
 
 function renderLegend() {
   const ul = $("legend-list");
@@ -335,18 +317,15 @@ function renderLegend() {
 }
 
 function renderDust() {
-  dustMarkers.forEach((m, city) => {
-    const d = dust.get(city);
-    const v = d?.[metric];
-    if (v == null) return m.remove();
+  dustBadges.forEach((badge, city) => {
+    const v = dust.get(city)?.[metric];
+    if (v == null) return badge.hide();
     const [, color, name] = gradeOf(metric, v);
-    m.setIcon(L.divIcon({
-      className: "",
+    badge.update({
       html: `<div class="dust-badge" style="background:${color}">${Math.round(v)}</div>`,
-      iconSize: [30, 30],
-    }));
-    m.setTooltipContent(`${city.name} · ${metric === "pm10" ? "PM10" : "PM2.5"} ${v} ㎍/㎥ (${name})`);
-    if (!dustLayer.hasLayer(m)) dustLayer.addLayer(m);
+      tip: `${city.name} · ${metric === "pm10" ? "PM10" : "PM2.5"} ${v} ㎍/㎥ (${name})`,
+    });
+    badge.show();
   });
 }
 

@@ -1,5 +1,5 @@
 // 장소 추천 에이전트 채팅 UI (/api/chat 호출) + 추천 장소를 지도에 마커로 표시
-// app.js 의 전역(map, choose)과 Leaflet(L)을 사용합니다.
+// app.js 의 choose() 와 지도 어댑터(mapx)를 사용합니다.
 (() => {
   const logEl = document.getElementById("chat-log");
   const formEl = document.getElementById("chat-form");
@@ -9,7 +9,6 @@
 
   const history = []; // { role: 'user' | 'assistant', content }
   const MAX_SEND = 12; // 서버로 보내는 최근 메시지 수
-  const spotLayer = L.layerGroup().addTo(map);
   let busy = false;
 
   // 모델 답변(마크다운 일부)을 안전하게 HTML 로: 먼저 이스케이프한 뒤 **굵게**, 목록, 줄바꿈만 허용
@@ -52,34 +51,40 @@
     logEl.append(wrap);
   }
 
-  // 추천 장소를 지도에 번호 마커로 표시
+  // 추천 장소를 지도에 번호 핀으로 표시
   function showSpots(spots) {
-    spotLayer.clearLayers();
+    mapx.spots.clear();
     if (!spots?.length) return;
-    const pts = [];
     spots.forEach((s, i) => {
       if (!Number.isFinite(s.latitude) || !Number.isFinite(s.longitude)) return;
-      const icon = L.divIcon({ className: "", html: `<div class="spot-pin">${i + 1}</div>`, iconSize: [24, 24] });
-      const marker = L.marker([s.latitude, s.longitude], { icon });
       const box = document.createElement("div");
       box.className = "spot-popup";
       const title = document.createElement("strong");
       title.textContent = s.name;
       const addr = document.createElement("div");
       addr.textContent = s.address || "";
+      box.append(title, addr);
+      if (s.url && /^https?:\/\//.test(s.url)) {
+        const link = document.createElement("a");
+        link.href = s.url;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        link.textContent = "카카오맵에서 보기";
+        link.style.display = "block";
+        box.append(link);
+      }
       const btn = document.createElement("button");
       btn.type = "button";
       btn.textContent = "이곳 날씨 보기";
+      let handle;
       btn.addEventListener("click", () => {
-        marker.closePopup();
+        handle?.closePopup();
         choose({ name: s.name, region: s.area || "", lat: s.latitude, lon: s.longitude, level: "point" });
       });
-      box.append(title, addr, btn);
-      marker.bindPopup(box);
-      spotLayer.addLayer(marker);
-      pts.push([s.latitude, s.longitude]);
+      box.append(btn);
+      handle = mapx.spots.add({ lat: s.latitude, lon: s.longitude, label: String(i + 1), popup: box });
     });
-    if (pts.length) map.fitBounds(L.latLngBounds(pts).pad(0.3), { maxZoom: 14 });
+    mapx.spots.fit();
   }
 
   async function send(text) {
@@ -132,7 +137,7 @@
   });
   clearEl.addEventListener("click", () => {
     history.length = 0;
-    spotLayer.clearLayers();
+    mapx.spots.clear();
     logEl.replaceChildren();
     clearEl.hidden = true;
   });
