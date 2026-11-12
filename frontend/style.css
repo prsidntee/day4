@@ -118,3 +118,10 @@ button:hover { background: #1d4ed8; }
 .sel-ring { width: 40px; height: 40px; border: 3px solid #1d4ed8; border-radius: 50%; pointer-events: none; }
 .spot-popup { padding: 8px 10px; min-width: 150px; font-size: .85rem; line-height: 1.5; }
 .spot-popup a { color: #2563eb; }
+
+#map-note {
+  position: absolute; left: 10px; bottom: 28px; right: 60px; z-index: 1000;
+  background: rgba(15, 23, 42, .85); color: #fff; font-size: .75rem; line-height: 1.4;
+  padding: 6px 28px 6px 10px; border-radius: 8px;
+}
+#map-note button { position: absolute; top: 2px; right: 4px; background: none; border: none; color: #fff; font-size: 1rem; padding: 0 4px; cursor: pointer; }

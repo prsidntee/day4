@@ -45,11 +45,17 @@ export default async function handler(req, res) {
   const problem = validate(body);
   if (problem) return res.status(400).json({ error: problem });
 
+  const startedAt = Date.now();
+  const deadline = startedAt + 55000; // Vercel maxDuration(60초)보다 먼저 응답하기 위한 전체 마감선
   try {
     // 1순위: 카카오 로컬 검색으로 바로 추천 (질문에서 지역·장소 유형을 읽을 수 있고 카카오가 응답할 때)
-    const kakao = await tryKakaoFirst(body.messages).catch((err) => {
+    // 카카오 경로에는 최대 20초만 쓰고, 넘으면 Gemini 에 시간을 남기기 위해 포기
+    const kakao = await Promise.race([
+      tryKakaoFirst(body.messages),
+      new Promise((ok) => setTimeout(() => ok({ fallbackReason: "카카오 응답이 20초 이상 걸려 중단" }), 20000)),
+    ]).catch((err) => {
       console.warn("kakao-first 실패, Gemini 로 대체:", err.message);
-      return null;
+      return { fallbackReason: `카카오 경로 오류: ${err.message}` };
     });
     if (kakao?.reply) return res.status(200).json(kakao);
     const fallbackReason = kakao?.fallbackReason || null;
@@ -65,10 +71,11 @@ export default async function handler(req, res) {
       apiKey,
       model: process.env.GEMINI_MODEL || "gemini-3.1-flash-lite",
       thinkingLevel: normalizeThinkingLevel(process.env.GEMINI_THINKING_LEVEL),
+      deadline,
       // 혼잡할 때 대신 쓸 모델 (쉼표로 여러 개 가능). 기본: 항상 최신 flash 를 가리키는 별칭
       fallbackModels: (process.env.GEMINI_FALLBACK_MODELS || "gemini-flash-latest").split(",").map((m) => m.trim()).filter(Boolean),
     });
-    return res.status(200).json({ ...out, source: "gemini", fallbackReason });
+    return res.status(200).json({ ...out, source: "gemini", fallbackReason, elapsedMs: Date.now() - startedAt });
   } catch (err) {
     console.error("agent error:", err);
     const status = err.status === 429 ? 429 : err.status === 504 ? 504 : 502;

@@ -16,12 +16,20 @@
     document.head.append(l);
   };
 
+  // 카카오맵을 우선 사용하고, 쓸 수 없을 때만 Leaflet(OpenStreetMap)으로 대체. 대체된 이유는 화면에 표시
   let kakaoKey = null;
-  if (new URLSearchParams(location.search).get("map") !== "leaflet") {
+  let fallbackReason = null;
+  if (new URLSearchParams(location.search).get("map") === "leaflet") {
+    fallbackReason = "주소에 ?map=leaflet 이 있어 OpenStreetMap 지도를 사용 중";
+  } else {
     try {
       const res = await fetch("/api/config", { cache: "no-store" });
-      if (res.ok) kakaoKey = (await res.json()).kakaoJsKey || null;
-    } catch { /* /api 가 없는 환경(정적 서버)이면 Leaflet */ }
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      kakaoKey = (await res.json()).kakaoJsKey || null;
+      if (!kakaoKey) fallbackReason = "서버에 KAKAO_JS_KEY 가 없어 OpenStreetMap 지도를 사용 중 (Vercel 환경 변수 등록 후 Redeploy)";
+    } catch (e) {
+      fallbackReason = `/api/config 를 불러오지 못해 OpenStreetMap 지도를 사용 중 (${e.message})`;
+    }
   }
 
   let provider = "leaflet";
@@ -32,6 +40,7 @@
       provider = "kakao";
     } catch (e) {
       console.warn("카카오맵 SDK 로드 실패, Leaflet 로 대체합니다.", e);
+      fallbackReason = "카카오맵 SDK 로드 실패로 OpenStreetMap 지도를 사용 중 (JavaScript 키와 'JavaScript SDK 도메인' 등록, 카카오맵 사용 설정을 확인하세요)";
     }
   }
 
@@ -43,6 +52,18 @@
   await loadScript("mapkit.js");
   window.mapx = createMapAdapter(provider);
   document.body.dataset.map = provider;
+  if (provider !== "kakao" && fallbackReason) {
+    const note = document.createElement("div");
+    note.id = "map-note";
+    note.textContent = fallbackReason;
+    const x = document.createElement("button");
+    x.type = "button";
+    x.textContent = "×";
+    x.setAttribute("aria-label", "닫기");
+    x.addEventListener("click", () => note.remove());
+    note.append(x);
+    document.getElementById("map").append(note);
+  }
 
   for (const src of ["cities.js", "app.js", "chat.js"]) await loadScript(src);
 })().catch((err) => {
