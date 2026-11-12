@@ -270,6 +270,9 @@ async function loadWeather() {
   }
 }
 
+// file:// 로 열면 Referer가 없어 OpenStreetMap 타일 서버가 403으로 거부함
+if (location.protocol === "file:") $("file-warning").hidden = false;
+
 // ---------- 지도 (OpenStreetMap + Leaflet) ----------
 // 한국(제주·울릉도·독도 포함)만 보이도록 범위 제한
 const KOREA_BOUNDS = L.latLngBounds([32.8, 124.4], [38.9, 132.0]);
