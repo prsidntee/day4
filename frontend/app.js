@@ -330,7 +330,8 @@ function renderDust() {
 }
 
 let dustRetry = null;
-const DUST_TTL = 30 * 60 * 1000; // 30분 (무료 API 호출 한도 보호)
+const DUST_REFRESH_MS = 60 * 60 * 1000; // 미세먼지 조회 주기: 1시간 (무료 API 호출 한도 보호)
+const DUST_TTL = DUST_REFRESH_MS;        // 저장된 값도 1시간 동안 재사용
 
 function readDustCache() {
   try {
@@ -418,7 +419,7 @@ async function loadAir(city) {
 
 $("refresh").addEventListener("click", () => { loadWeather(); loadAllDust(true); });
 setInterval(loadWeather, 10 * 60 * 1000); // 10분마다 자동 갱신
-setInterval(loadAllDust, 30 * 60 * 1000);
+setInterval(() => loadAllDust(true), DUST_REFRESH_MS); // 1시간마다 새로 조회
 
 renderLegend();
 loadAllDust();

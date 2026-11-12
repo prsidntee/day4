@@ -2,6 +2,7 @@
 // 요청: { messages: [{ role: "user" | "assistant", content: string }, ...] }
 // 응답: { reply, toolCalls, spots }
 import { runAgent } from "../lib/agent.js";
+import { tryKakaoFirst } from "../lib/kakao-first.js";
 
 const MAX_MESSAGES = 20;
 const MAX_CHARS = 1000;
@@ -37,12 +38,6 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "POST만 지원합니다" });
   }
 
-  // 복붙하면서 섞이기 쉬운 앞뒤 공백·줄바꿈·따옴표를 제거
-  const apiKey = (process.env.GEMINI_API_KEY || "").trim().replace(/^["']+|["']+$/g, "").trim();
-  if (!apiKey) {
-    return res.status(500).json({ error: "서버에 GEMINI_API_KEY 환경 변수가 설정되지 않았습니다 (Vercel 프로젝트 설정 > Environment Variables)" });
-  }
-
   const ip = String(req.headers["x-forwarded-for"] || req.socket?.remoteAddress || "unknown").split(",")[0].trim();
   if (rateLimited(ip)) return res.status(429).json({ error: "요청이 너무 많습니다. 잠시 후 다시 시도해 주세요." });
 
@@ -51,15 +46,30 @@ export default async function handler(req, res) {
   if (problem) return res.status(400).json({ error: problem });
 
   try {
+    // 1순위: 카카오 로컬 검색으로 바로 추천 (질문에서 지역·장소 유형을 읽을 수 있고 카카오가 응답할 때)
+    const kakao = await tryKakaoFirst(body.messages).catch((err) => {
+      console.warn("kakao-first 실패, Gemini 로 대체:", err.message);
+      return null;
+    });
+    if (kakao) return res.status(200).json(kakao);
+
+    // 2순위: Gemini 함수 호출 에이전트 (카카오 키 없음·오류·결과 없음·질문 해석 불가일 때만)
+    // 복붙하면서 섞이기 쉬운 앞뒤 공백·줄바꿈·따옴표를 제거
+    const apiKey = (process.env.GEMINI_API_KEY || "").trim().replace(/^["']+|["']+$/g, "").trim();
+    if (!apiKey) {
+      return res.status(500).json({ error: "카카오로 추천할 수 없는 질문이고, 서버에 GEMINI_API_KEY 환경 변수도 없습니다 (Vercel 프로젝트 설정 > Environment Variables)" });
+    }
     const out = await runAgent({
       messages: body.messages,
       apiKey,
       model: process.env.GEMINI_MODEL || "gemini-3.8-flash",
+      // 혼잡할 때 대신 쓸 모델 (쉼표로 여러 개 가능). 기본: 항상 최신 flash 를 가리키는 별칭
+      fallbackModels: (process.env.GEMINI_FALLBACK_MODELS || "gemini-flash-latest").split(",").map((m) => m.trim()).filter(Boolean),
     });
-    return res.status(200).json(out);
+    return res.status(200).json({ ...out, source: "gemini" });
   } catch (err) {
     console.error("agent error:", err);
-    const status = err.status === 429 ? 429 : 502;
+    const status = err.status === 429 ? 429 : err.status === 504 ? 504 : 502;
     return res.status(status).json({ error: err.message || "에이전트 실행 중 오류가 발생했습니다" });
   }
 }

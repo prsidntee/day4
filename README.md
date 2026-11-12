@@ -23,6 +23,11 @@ vercel.json      outputDirectory=frontend, 함수 maxDuration=60초
 | `get_weather` | 현재 날씨, 3일 예보(강수확률 포함), 미세먼지 PM10/PM2.5 | Open-Meteo (키 불필요) |
 | `find_spots` | 지역 주변의 카페·식당·관광지·박물관·공원·해변·전망대 검색 또는 이름 검색 | **카카오 로컬 API**(`KAKAO_REST_API_KEY` 있을 때), 없거나 실패하면 OpenStreetMap Nominatim |
 
+### 추천 순서: 카카오 먼저, 안 되면 Gemini
+
+1. `KAKAO_REST_API_KEY` 가 있고 질문에서 **지역과 장소 유형**(카페·맛집·박물관·공원·해변·전망대·관광지)을 읽을 수 있으면, Gemini 없이 **카카오 로컬 검색 + Open-Meteo 날씨**로 바로 추천합니다 (`lib/kakao-first.js`, 응답 `source: "kakao"`).
+2. 키가 없거나, 카카오가 오류/결과 없음이거나, 질문을 규칙으로 읽을 수 없으면(예: "비 오는 날 어디 가면 좋을까?") **Gemini 함수 호출 에이전트**가 처리합니다 (`source: "gemini"`). 이때만 `GEMINI_API_KEY` 가 필요하고, Gemini 가 혼잡하면 재시도 후 대체 모델로 넘어갑니다.
+
 모델이 질문을 보고 필요한 도구를 직접 골라 호출합니다(병렬 호출 가능). 예: "제주에서 비 오는 날 갈 카페" →
 `get_weather(제주)` + `find_spots(제주, cafe)` → 날씨를 근거로 추천. 추천 장소는 지도에 번호 마커로 표시됩니다.
 

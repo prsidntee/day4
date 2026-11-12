@@ -18,7 +18,10 @@
     let html = "", inList = false;
     for (const raw of lines) {
       const m = raw.match(/^\s*(?:[-*•]|\d+\.)\s+(.*)$/);
-      const line = (m ? m[1] : raw).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+      const line = (m ? m[1] : raw)
+        .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+        // [글자](http(s)://...) 링크만 허용 (이미 이스케이프된 문자열에서 처리하므로 스크립트 삽입 불가)
+        .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
       if (m) { if (!inList) { html += "<ul>"; inList = true; } html += `<li>${line}</li>`; continue; }
       if (inList) { html += "</ul>"; inList = false; }
       html += line.trim() ? `<div>${line}</div>` : "";
@@ -33,6 +36,17 @@
     logEl.append(el);
     logEl.scrollTop = logEl.scrollHeight;
     return el;
+  }
+
+  function addSourceChip(source) {
+    if (!source) return;
+    const wrap = document.createElement("div");
+    wrap.className = "tools";
+    const chip = document.createElement("span");
+    chip.className = "tool-chip";
+    chip.textContent = source === "kakao" ? "⚡ 카카오 우선 추천" : "🤖 Gemini 에이전트";
+    wrap.append(chip);
+    logEl.append(wrap);
   }
 
   function addToolChips(toolCalls) {
@@ -110,6 +124,7 @@
         throw new Error(data?.error || (res.status === 404 ? "/api/chat 을 찾을 수 없습니다. start.bat(로컬) 또는 Vercel 배포 주소에서 열어 주세요." : `서버 오류 (HTTP ${res.status})`));
       }
       pending.remove();
+      addSourceChip(data.source);
       addToolChips(data.toolCalls);
       addMsg("bot", renderMarkdown(data.reply), true);
       history.push({ role: "assistant", content: data.reply });
