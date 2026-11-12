@@ -1,0 +1,85 @@
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: -apple-system, "Segoe UI", "Malgun Gothic", sans-serif;
+  color: #1b2a3a;
+}
+.app { display: grid; grid-template-columns: 380px 1fr; height: 100vh; }
+.panel { padding: 20px; overflow-y: auto; background: #fff; box-shadow: 2px 0 12px rgba(0,0,0,.12); z-index: 500; }
+#map { height: 100%; min-height: 300px; }
+@media (max-width: 800px) {
+  .app { grid-template-columns: 1fr; grid-template-rows: auto 60vh; height: auto; }
+}
+.legend { margin-top: 20px; border-top: 1px solid #e2e8f0; padding-top: 14px; }
+.seg { display: flex; gap: 6px; margin-bottom: 10px; }
+.seg button { flex: 1; font-size: .85rem; background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; }
+.seg button.on { background: #2563eb; color: #fff; border-color: #2563eb; }
+#legend-list { list-style: none; margin: 0; padding: 0; display: flex; gap: 6px; flex-wrap: wrap; font-size: .8rem; }
+#legend-list li { display: flex; align-items: center; gap: 4px; }
+#legend-list i { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+.note { font-size: .75rem; color: #94a3b8; margin: 8px 0 0; }
+.dust-badge {
+  width: 30px; height: 30px; border-radius: 50%;
+  display: grid; place-items: center;
+  font-size: 11px; font-weight: 700; color: #fff;
+  border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,.4);
+  text-shadow: 0 0 2px rgba(0,0,0,.5);
+}
+.dust-badge.sel { outline: 3px solid #1d4ed8; }
+h1 { margin: 0 0 16px; font-size: 1.3rem; }
+.controls { display: flex; gap: 8px; margin-bottom: 16px; }
+input, button {
+  font: inherit;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+}
+.search { flex: 1; position: relative; }
+.search input { width: 100%; }
+#suggestions {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0; right: 0;
+  z-index: 10;
+  margin: 0; padding: 4px;
+  list-style: none;
+  max-height: 260px;
+  overflow-y: auto;
+  background: #fff;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, .15);
+}
+#suggestions li {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+#suggestions li small { color: #94a3b8; margin-left: 12px; text-align: right; }
+/* 읍·면·동: 시·군·구와 구분되도록 글씨를 70% 농도로 */
+#suggestions li.dong .name { opacity: .7; }
+#suggestions li.note { color: #94a3b8; font-size: .85rem; cursor: default; }
+#suggestions li.active, #suggestions li:hover { background: #e0ecff; }
+#suggestions li mark { background: none; color: #2563eb; font-weight: 700; }
+.place { font-weight: 600; color: #475569; }
+button { cursor: pointer; background: #2563eb; color: #fff; border: none; }
+button:hover { background: #1d4ed8; }
+.status { text-align: center; color: #64748b; }
+.status.error { color: #dc2626; }
+.main { text-align: center; }
+.icon { font-size: 4rem; line-height: 1; }
+.temp { font-size: 3rem; font-weight: 700; }
+.desc { color: #475569; margin-bottom: 16px; }
+.details {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 0;
+}
+.details div { background: #f1f5f9; border-radius: 12px; padding: 10px 12px; }
+.details dt { font-size: .8rem; color: #64748b; }
+.details dd { margin: 2px 0 0; font-weight: 600; }
+.updated { text-align: center; font-size: .75rem; color: #94a3b8; margin: 14px 0 0; }

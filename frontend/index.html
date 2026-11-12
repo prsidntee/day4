@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>대한민국 날씨·미세먼지 지도</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+    <aside class="panel">
+      <h1>대한민국 날씨·미세먼지</h1>
+
+      <div class="controls">
+        <div class="search">
+          <input id="search" type="text" placeholder="지역 검색 (한글/영문)" autocomplete="off"
+                 role="combobox" aria-expanded="false" aria-controls="suggestions" />
+          <ul id="suggestions" role="listbox" hidden></ul>
+        </div>
+        <button id="refresh" type="button">새로고침</button>
+      </div>
+
+      <section id="status" class="status">지역을 검색하거나 지도를 클릭하세요.</section>
+
+      <section id="weather" class="weather" hidden>
+        <div class="main">
+          <div class="place" id="place"></div>
+          <div class="icon" id="icon"></div>
+          <div class="temp"><span id="temp">--</span>°C</div>
+          <div class="desc" id="desc"></div>
+        </div>
+        <dl class="details">
+          <div><dt>체감온도</dt><dd id="feels">--</dd></div>
+          <div><dt>습도</dt><dd id="humidity">--</dd></div>
+          <div><dt>풍속</dt><dd id="wind">--</dd></div>
+          <div><dt>강수량</dt><dd id="precip">--</dd></div>
+          <div><dt>미세먼지 PM10</dt><dd id="pm10">--</dd></div>
+          <div><dt>초미세먼지 PM2.5</dt><dd id="pm25">--</dd></div>
+        </dl>
+        <p class="updated" id="updated"></p>
+      </section>
+
+      <section class="legend">
+        <div class="seg" role="group" aria-label="지도 표시 항목">
+          <button type="button" data-metric="pm10" class="on">미세먼지 PM10</button>
+          <button type="button" data-metric="pm25">초미세먼지 PM2.5</button>
+        </div>
+        <ul id="legend-list"></ul>
+        <p class="note" id="dust-status">전국 미세먼지 불러오는 중...</p>
+      </section>
+    </aside>
+
+    <div id="map" aria-label="대한민국 지도"></div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+  <script src="cities.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
