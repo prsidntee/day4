@@ -85,3 +85,29 @@ button:hover { background: #1d4ed8; }
 .details dt { font-size: .8rem; color: #64748b; }
 .details dd { margin: 2px 0 0; font-weight: 600; }
 .updated { text-align: center; font-size: .75rem; color: #94a3b8; margin: 14px 0 0; }
+
+/* ---- 장소 추천 에이전트 ---- */
+.agent { margin-top: 20px; border-top: 1px solid #e2e8f0; padding-top: 14px; }
+.agent h2 { margin: 0 0 10px; font-size: 1rem; }
+#chat-log { max-height: 340px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin-bottom: 8px; }
+.chat-hint { margin: 0; font-size: .8rem; color: #64748b; }
+.chat-suggest { display: flex; flex-direction: column; gap: 6px; }
+.chat-suggest button { text-align: left; font-size: .8rem; padding: 6px 10px; background: #f1f5f9; color: #334155; border: 1px solid #e2e8f0; }
+.chat-suggest button:hover { background: #e0ecff; }
+.msg { padding: 8px 10px; border-radius: 12px; font-size: .88rem; line-height: 1.5; max-width: 92%; overflow-wrap: anywhere; }
+.msg.user { align-self: flex-end; background: #2563eb; color: #fff; }
+.msg.bot { align-self: flex-start; background: #f1f5f9; color: #1b2a3a; }
+.msg.err { align-self: flex-start; background: #fee2e2; color: #991b1b; }
+.msg.pending { color: #64748b; }
+.msg ul { margin: 4px 0; padding-left: 18px; }
+.tools { align-self: flex-start; display: flex; flex-wrap: wrap; gap: 4px; }
+.tool-chip { font-size: .72rem; padding: 2px 8px; border-radius: 999px; background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
+.tool-chip.fail { background: #fef2f2; color: #b91c1c; border-color: #fecaca; }
+#chat-form { display: flex; gap: 6px; }
+#chat-input { flex: 1; min-width: 0; }
+#chat-form button { background: #2563eb; color: #fff; border: none; }
+#chat-form button:disabled { background: #94a3b8; cursor: wait; }
+.linklike { background: none; border: none; color: #64748b; font-size: .75rem; padding: 4px 0; text-decoration: underline; cursor: pointer; }
+.spot-pin { width: 24px; height: 24px; border-radius: 50%; background: #7c3aed; color: #fff; display: grid; place-items: center;
+  font-size: 12px; font-weight: 700; border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,.4); }
+.spot-popup button { margin-top: 6px; font-size: .8rem; padding: 4px 8px; background: #2563eb; color: #fff; border: none; border-radius: 8px; cursor: pointer; }

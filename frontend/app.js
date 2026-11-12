@@ -350,13 +350,29 @@ function renderDust() {
   });
 }
 
-async function loadAllDust() {
-  const note = $("dust-status");
-  note.textContent = "전국 미세먼지 불러오는 중...";
-  const cities = CITIES;
+let dustRetry = null;
+const DUST_TTL = 30 * 60 * 1000; // 30분 (무료 API 호출 한도 보호)
+
+function readDustCache() {
   try {
-    for (let i = 0; i < cities.length; i += 50) { // 한 번에 50곳씩 조회
-      const chunk = cities.slice(i, i + 50);
+    const c = JSON.parse(localStorage.getItem(DUST_CACHE_KEY));
+    if (c && Date.now() - c.t < DUST_TTL && c.v.length === CITIES.length) return c;
+  } catch { /* 저장소 사용 불가 */ }
+  return null;
+}
+
+async function loadAllDust(force = false) {
+  const note = $("dust-status");
+  const cached = !force && readDustCache();
+  if (cached) {
+    cached.v.forEach((d, i) => dust.set(CITIES[i], d));
+    note.textContent = `${dust.size}개 시·군 · 출처: Open-Meteo 대기질(CAMS 예측 모델 값) · ${new Date(cached.t).toLocaleTimeString("ko-KR")} 기준`;
+    return renderDust();
+  }
+  note.textContent = "전국 미세먼지 불러오는 중...";
+  try {
+    for (let i = 0; i < CITIES.length; i += 50) { // 한 번에 50곳씩 조회
+      const chunk = CITIES.slice(i, i + 50);
       const params = new URLSearchParams({
         latitude: chunk.map((c) => c.lat).join(","),
         longitude: chunk.map((c) => c.lon).join(","),
@@ -369,20 +385,29 @@ async function loadAllDust() {
       if (!Array.isArray(json)) json = [json];
       json.forEach((r, k) => dust.set(chunk[k], { pm10: r.current?.pm10, pm25: r.current?.pm2_5 }));
     }
-    const t = [...dust.values()].length;
-    note.textContent = `${t}개 시·군 · 출처: Open-Meteo 대기질(CAMS 예측 모델 값, 관측소 실측과 다를 수 있음)`;
+    note.textContent = `${dust.size}개 시·군 · 출처: Open-Meteo 대기질(CAMS 예측 모델 값, 관측소 실측과 다를 수 있음)`;
+    try { localStorage.setItem(DUST_CACHE_KEY, JSON.stringify({ t: Date.now(), v: CITIES.map((c) => dust.get(c)) })); } catch { /* 무시 */ }
+    clearTimeout(dustRetry);
     renderDust();
   } catch (err) {
-    note.textContent = `미세먼지를 불러오지 못했습니다: ${err.message}`;
+    // 한도 초과/실패 시: 오래된 캐시라도 있으면 그것으로 표시
+    try {
+      const old = JSON.parse(localStorage.getItem(DUST_CACHE_KEY));
+      if (old && old.v.length === CITIES.length) {
+        old.v.forEach((d, i) => dust.set(CITIES[i], d));
+        renderDust();
+        note.textContent = `최신 조회 실패(${err.message}) · ${new Date(old.t).toLocaleTimeString("ko-KR")} 기준 저장된 값을 표시 중`;
+      }
+    } catch { /* 무시 */ }
+    if (!dust.size) {
+      note.textContent = err.message.includes("429")
+        ? "미세먼지 API 호출 한도를 초과했습니다. 5분마다 자동으로 다시 시도합니다."
+        : `미세먼지를 불러오지 못했습니다: ${err.message} (5분 뒤 자동 재시도)`;
+    }
+    clearTimeout(dustRetry);
+    dustRetry = setTimeout(() => loadAllDust(true), 5 * 60 * 1000);
   }
 }
-
-CITIES.forEach((c) => {
-  const m = L.marker([c.lat, c.lon], { icon: L.divIcon({ className: "", html: "", iconSize: [30, 30] }) });
-  m.bindTooltip(c.name, { direction: "top", offset: [0, -14] });
-  m.on("click", () => choose(c));
-  dustMarkers.set(c, m);
-});
 
 document.querySelectorAll(".seg button").forEach((b) =>
   b.addEventListener("click", () => {
@@ -412,7 +437,7 @@ async function loadAir(city) {
   }
 }
 
-$("refresh").addEventListener("click", () => { loadWeather(); loadAllDust(); });
+$("refresh").addEventListener("click", () => { loadWeather(); loadAllDust(true); });
 setInterval(loadWeather, 10 * 60 * 1000); // 10분마다 자동 갱신
 setInterval(loadAllDust, 30 * 60 * 1000);
 

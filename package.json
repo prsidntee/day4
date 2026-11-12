@@ -1,0 +1,13 @@
+{
+  "name": "korea-weather-agent",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "한국 날씨·미세먼지 지도 + Gemini 함수 호출 장소 추천 에이전트 (Vercel 전용)",
+  "scripts": {
+    "dev": "node server.mjs"
+  },
+  "engines": {
+    "node": "22.x"
+  }
+}

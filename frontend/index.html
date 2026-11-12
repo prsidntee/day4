@@ -52,6 +52,22 @@
         <ul id="legend-list"></ul>
         <p class="note" id="dust-status">전국 미세먼지 불러오는 중...</p>
       </section>
+      <section class="agent">
+        <h2>🤖 장소 추천 에이전트</h2>
+        <div id="chat-log" aria-live="polite">
+          <p class="chat-hint">날씨와 실제 장소 검색을 조합해 추천해 드려요.</p>
+          <div class="chat-suggest">
+            <button type="button">이번 주말 제주에서 비 와도 갈 만한 카페 추천해줘</button>
+            <button type="button">부산 해운대 근처 산책하기 좋은 곳 알려줘</button>
+            <button type="button">서울 종로에서 미세먼지 걱정 없이 갈 박물관은?</button>
+          </div>
+        </div>
+        <form id="chat-form" autocomplete="off">
+          <input id="chat-input" type="text" maxlength="500" placeholder="예: 내일 강릉 날씨 보고 갈 곳 추천해줘" />
+          <button type="submit" id="chat-send">전송</button>
+        </form>
+        <button type="button" id="chat-clear" class="linklike" hidden>대화 지우기</button>
+      </section>
     </aside>
 
     <div id="map" aria-label="대한민국 지도"></div>
@@ -60,5 +76,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
   <script src="cities.js"></script>
   <script src="app.js"></script>
+  <script src="chat.js"></script>
 </body>
 </html>

@@ -3,8 +3,8 @@
   "configurations": [
     {
       "name": "frontend",
-      "runtimeExecutable": "python",
-      "runtimeArgs": ["-m", "http.server", "8765", "--directory", "frontend"],
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["server.mjs"],
       "port": 8765
     }
   ]
